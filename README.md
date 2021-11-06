@@ -1,5 +1,5 @@
 # Configuring Azure Cosmos DB Multi-Master Writes via SDK
-SDK samples for setting up Azure Cosmos DB - Multi-Master Write Regions across 5 available APIs in one place.
+SDK samples for setting up Azure Cosmos DB - Multi-Master Write Regions across 5 available APIs in one location.
 
 [About Azure Cosmos DB](#about-azure-cosmos-db) 
 
@@ -152,13 +152,13 @@ Based on common scenarios, we recommend using the following settings:
 - If low latency reads are required, use the NEAREST read preference mode. This setting directs the read operations to the nearest available region. Note that if the nearest region is the WRITE region, then these operations are directed to that region.
 - If high availability and geo distribution of reads are required (latency is not a constraint), then use the PRIMARY PREFERRED or SECONDARY PREFERRED read preference mode. This setting directs read operations to an available WRITE or READ region respectively. If the region is not available, then requests are directed to the next available region as per the read preference behavior.
 
-[Cassandra DB API](#cassandra-db-api)
+## Cassandra DB API
 *To be filled in later*
 
-[Table API](#table-api)
+## Table API
 *To be filled in later*
 
-[Gremlin API](#gremlin-api)
+## Gremlin API
 *To be filled in later*
 
 ## Feedback
