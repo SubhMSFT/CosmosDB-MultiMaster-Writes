@@ -22,6 +22,8 @@ Azure Cosmos DB is a fully managed NoSQL database for modern app development, wi
 
 ![Image1](media/azure-cosmos-db.png)
 
+Prior to the capability of assigning 'Multi-Master', if you had multiple regions defined, all your 'Writes' would have always gone to the region which is assigned, 'Write Region', and all 'Reads' could come from the nearest Replica Regions. With Multi-Master now, every Replica Region that you setup is a Full-Master, so you can write to that region as well; and get the same latency as if you were in the same region as the Master.
+
 ## Core SQL API
 Once an account has been created with multiple write regions enabled, you must make two changes in your application to the ```ConnectionPolicy``` for the Cosmos client to enable the multi-region writes in Azure Cosmos DB. Within the ```ConnectionPolicy```, set ```UseMultipleWriteLocations``` to **true** and pass the name of the region where the application is deployed to ```ApplicationRegion```. This will populate the ```PreferredLocations``` property based on the geo-proximity from location passed in. If a new region is later added to the account, the application does not have to be updated or redeployed, it will automatically detect the closer region and will auto-home on to it should a regional event occur.
 
