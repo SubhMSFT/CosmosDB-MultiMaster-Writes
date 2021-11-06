@@ -1,4 +1,4 @@
-# Configuring Azure Cosmos DB Multi-Master Writes via SDK.
+# Configuring Azure Cosmos DB Multi-Master Writes via SDK
 SDK samples for setting up Azure Cosmos DB - Multi-Master Write Regions across 5 available APIs in one place.
 
 [Introduction](#Introduction)
