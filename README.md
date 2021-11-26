@@ -161,12 +161,108 @@ Based on common scenarios, we recommend using the following settings:
 - If high availability and geo distribution of reads are required (latency is not a constraint), then use the PRIMARY PREFERRED or SECONDARY PREFERRED read preference mode. This setting directs read operations to an available WRITE or READ region respectively. If the region is not available, then requests are directed to the next available region as per the read preference behavior.
 
 ## Cassandra DB API
-*To be filled in later*
+You will need to implement Azure Cosmos DB extension for Cassandra API for the Java v4 Datastax Apache Cassandra OSS Driver. Access GitHub project [here](https://github.com/Azure-Samples/azure-cosmos-cassandra-extensions-java-sample-v4).
 
-## Table API
-*To be filled in later*
+```
+        <dependency>
+            <groupId>com.azure</groupId>
+            <artifactId>azure-cosmos-cassandra-driver-4-extensions</artifactId>
+            <version>1.1.0</version>
+        </dependency>
+```
+
+In application.conf, you can mention:
+
+```
+  basic {   
+    contact-points = [${AZURE_COSMOS_CASSANDRA_GLOBAL_ENDPOINT}]    
+    load-balancing-policy {
+      # Global endpoint for connecting to Cassandra
+      #
+      #   When global-endpoint is specified, you may specify a read-datacenter, but must not specify a write-datacenter.
+      #   Writes will go to the default write region when global-endpoint is specified.
+      #
+      #   When global-endpoint is not specified, you must specify values for read-datacenter, write-datacenter, and
+      #   datastax-java-driver.basic.contact-points.
+      #
+      #   Set the variables referenced here to match the topology and preferences for your
+      #   Cosmos DB Cassandra API instance.
+      global-endpoint = ""
+      read-datacenter = "Australia East"
+      write-datacenter = "UK South"
+    }
+  }
+```
 
 ## Gremlin API
+Cosmos DB Graph database engine is capable of running in multiple regions, each of which contains multiple clusters. Each cluster has hundreds of machines. Cosmos DB Graph account DNS CNAME accountname.gremlin.cosmos.azure.com resolves to DNS A record of a cluster. A single IP address of a load-balancer **hides** internal cluster topology.
+
+A regional DNS CNAME record is created for every region of Cosmos DB Graph account. Format of regional endpoint is accountname-region.gremlin.cosmos.azure.com. Region segment of regional endpoint is obtained by removing all spaces from Azure region name. For example, "East US 2" region for "contoso" global database account would have a DNS CNAME contoso-eastus2.gremlin.cosmos.azure.com.
+
+TinkerPop Gremlin client is designed to work with a **single server**. Application can use global writable DNS CNAME for read and write traffic. Region-aware applications should use regional endpoint for read traffic. Use regional endpoint for write traffic only if specific region is configured to accept writes.
+
+Global database account CNAME always points to a valid write region. During server-side failover of write region, Cosmos DB updates global database account CNAME to point to new region. If application can't handle traffic rerouting after failover, it should use global database account DNS CNAME.
+
+Example below demonstrates general principles of accessing regional Gremlin endpoint. Application should consider number of regions to send the traffic to and number of corresponding Gremlin clients to instantiate.
+
+```
+// Example value: Central US, West US and UK West. This can be found in the overview blade of you Azure Cosmos DB Gremlin Account. 
+// Look for Write Locations in the overview blade. You can click to copy and paste.
+string[] gremlinAccountRegions = new string[] {"Central US", "West US" ,"UK West"};
+string gremlinAccountName = "PUT-COSMOSDB-ACCOUNT-NAME-HERE";
+string gremlinAccountKey = "PUT-ACCOUNT-KEY-HERE";
+string databaseName = "PUT-DATABASE-NAME-HERE";
+string graphName = "PUT-GRAPH-NAME-HERE";
+
+foreach (string gremlinAccountRegion in gremlinAccountRegions)
+{
+  // Convert preferred read location to the form "[acountname]-[region].gremlin.cosmos.azure.com".
+  string regionalGremlinEndPoint = $"{gremlinAccountName}-{gremlinAccountRegion.ToLowerInvariant().Replace(" ", string.Empty)}.gremlin.cosmos.azure.com";
+
+  GremlinServer regionalGremlinServer = new GremlinServer(
+    hostname: regionalGremlinEndPoint, 
+    port: 443,
+    enableSsl: true,
+    username: "/dbs/" + databaseName + "/colls/" + graphName,
+    password: gremlinAccountKey);
+
+  GremlinClient regionalGremlinClient = new GremlinClient(
+    gremlinServer: regionalGremlinServer,
+    graphSONReader: new GraphSON2Reader(),
+    graphSONWriter: new GraphSON2Writer(),
+    mimeType: GremlinClient.GraphSON2MimeType);
+}
+```
+
+**SDK endpoint discovery**: Application can use Azure Cosmos DB SDK to discover read and write locations for Graph account. These locations can change at any time through manual reconfiguration on the server side or automatic failover. **TinkerPop Gremlin SDK doesn't have an API to discover Cosmos DB Graph database account regions. Applications that need runtime endpoint discovery need to host 2 separate SDKs in the process space**.
+
+```
+// Depending on the version and the language of the SDK (.NET vs Java vs Python)
+// the API to get readLocations and writeLocations may vary.
+IDocumentClient documentClient = new DocumentClient(
+    new Uri(cosmosUrl),
+    cosmosPrimaryKey,
+    connectionPolicy,
+    consistencyLevel);
+
+DatabaseAccount databaseAccount = await cosmosClient.GetDatabaseAccountAsync();
+
+IEnumerable<DatabaseAccountLocation> writeLocations = databaseAccount.WritableLocations;
+IEnumerable<DatabaseAccountLocation> readLocations = databaseAccount.ReadableLocations;
+
+// Pick write or read locations to construct regional endpoints for.
+foreach (string location in readLocations)
+{
+  // Convert preferred read location to the form "[acountname]-[region].gremlin.cosmos.azure.com".
+  string regionalGremlinEndPoint = location
+    .Replace("http:\/\/", string.Empty)
+    .Replace("documents.azure.com:443/", "gremlin.cosmos.azure.com");
+  
+  // Use code from the previous sample to instantiate Gremlin client.
+}
+```
+
+## Table API
 *To be filled in later*
 
 ## Feedback
