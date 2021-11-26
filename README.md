@@ -9,9 +9,9 @@ SDK samples for setting up Azure Cosmos DB - Multi-Master Write Regions across 5
 
 [Cassandra DB API](#cassandra-db-api)
 
-[Table API](#table-api)
-
 [Gremlin API](#gremlin-api)
+
+[Table API](#table-api)
 
 [Feedback](#feedback)
 
